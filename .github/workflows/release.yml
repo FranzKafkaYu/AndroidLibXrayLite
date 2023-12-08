@@ -38,7 +38,7 @@ jobs:
       uses: android-actions/setup-android@v2
   
 
-    - name: Build dependencies
+    - name: Build aar
       run: |
         mkdir ${{ github.workspace }}/build
         cd ${{ github.workspace }}/build
@@ -49,8 +49,8 @@ jobs:
         go mod tidy -v
         gomobile bind -v -androidapi 19 -ldflags='-s -w' ./
 
-    - name: Upload AAR 
+    - name: Upload aar 
       uses: actions/upload-artifact@v3
       with:
         name: aar
-        path: ${{ github.workspace }}/build/*.aar
+        path: ${{ github.workspace }}/build/AndroidLibXrayLite/*.aar
