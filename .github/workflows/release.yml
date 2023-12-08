@@ -1,0 +1,56 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Build Xray Core AAR file
+
+on:
+  push:
+    tags:
+      - 0.*
+  workflow_dispatch:
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Golang
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21.4'
+
+    - name: Install gomobile
+      run: |
+        go install golang.org/x/mobile/cmd/gomobile@latest
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+
+    - name: Setup Android environment
+      uses: android-actions/setup-android@v2
+  
+
+    - name: Build dependencies
+      run: |
+        mkdir ${{ github.workspace }}/build
+        cd ${{ github.workspace }}/build
+        git clone --depth=1 -b main https://github.com/2dust/AndroidLibXrayLite.git
+        cd AndroidLibXrayLite
+        go get github.com/xtls/xray-core@${{ github.event.inputs.XRAY_CORE_VERSION }} || true
+        gomobile init
+        go mod tidy -v
+        gomobile bind -v -androidapi 19 -ldflags='-s -w' ./
+
+    - name: Upload AAR 
+      uses: actions/upload-artifact@v3
+      with:
+        name: aar
+        path: ${{ github.workspace }}/build/*.aar
